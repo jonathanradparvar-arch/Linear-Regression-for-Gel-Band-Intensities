@@ -1,0 +1,67 @@
+# libraries import
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+rxn_vol = 20 # uL
+arg_conc = 50 # stock arginine concentration, mM
+X_vol = np.array([0, 2, 4, 7]) # arginine vol. (uL)
+
+X = arg_conc*X_vol/rxn_vol # arginine conc. (mM)
+y = np.array([93.185, 82.658, 81.435, 78.365]) # intensity of 'spliced' bands
+
+
+# Linear fit via normal equations
+
+n_X = X.shape[0]
+X_b = np.c_[np.ones((n_X, 1)), X]
+
+    #compute parameters (incl intercept & slope)
+theta_best = np.linalg.inv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)
+
+    #extract intercept & slope from computed parameters
+intercept, slope = theta_best[0], theta_best[1]
+
+    #generate predictions for general relationship
+y_pred = X_b.dot(theta_best)
+
+    #define equation for specific intensity values
+def y_eq(C):
+    y = slope*C + intercept
+    return(y)
+
+
+# Manually calculate R^2 value
+y_avg = np.mean(y)
+
+def R(x,y):
+    R = (y_avg-y_eq(x))**2
+    return(R)
+
+def T(x,y):
+    T = (y_avg-y)**2
+    return(T)
+
+SSR = 0
+SST = 0
+
+for i in range(n_X):
+       
+    SSR += R(X[i],y[i])
+    SST += T(X[i],y[i])
+
+R2 = SSR/SST
+
+
+# Plotting data points & fitted line
+fig, ax = plt.subplots(figsize=(6,5))
+plt.plot(X, y_pred, label="I = ${:.2f} {:.2f}$".format(intercept, slope)+"(mM\u207B\u00B9)C\nR\u00B2 = "+str(np.round(R2, 3)),
+         color="black")
+plt.scatter(X,y,marker='o',color='black')
+#plt.scatter(X_u,Abs_uavg,marker='x',color='black',zorder=100,label='Unknown Concentrations')
+plt.xlabel('Arginine Concentration (mM)', fontsize=11)
+plt.ylabel('Spliced % Intensity', fontsize=11)
+plt.title('Spliced % Intensity vs. Arginine Concentration', fontsize=12)
+plt.legend()
+fig.savefig('C154_Lab2_LR.png', dpi = 300)
+plt.show()
